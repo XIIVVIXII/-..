@@ -53,7 +53,6 @@
             image-rendering: -webkit-optimize-contrast; 
         }
 
-        /* Zoom QR Overlay */
         .qr-overlay {
             display: none;
             position: fixed;
@@ -89,6 +88,27 @@
             border-radius: 18px;
             overflow: hidden;
             box-shadow: 0 4px 10px rgba(255, 182, 193, 0.2);
+            cursor: pointer;
+            position: relative;
+        }
+
+        /* ส่วนแสดงคำใบ้เมื่อกดครั้งแรก */
+        .profile-window-frame::after {
+            content: "เปลี่ยนรูป";
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 133, 162, 0.7);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .profile-window-frame.ready-to-change::after {
+            opacity: 1;
         }
     </style>
 </head>
@@ -98,11 +118,13 @@
         <img id="zoomed-qr" src="" class="qr-zoom-img">
     </div>
 
+    <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="updateProfileImage(this)">
+
     <div class="w-full max-w-[360px] glass-card rounded-[3rem] p-6 text-center relative overflow-hidden">
         
         <div class="flex items-center justify-between mb-6 px-1">
             <div class="relative profile-sway">
-                <div class="profile-window-frame">
+                <div id="profile-frame" class="profile-window-frame" onclick="handleProfileClick()">
                     <img id="profile-img" src="https://i.postimg.cc/jdYx10Md/1a6a5c19f05ea142b51400d401e50794.jpg" alt="Profile" class="w-full h-full object-cover">
                 </div>
             </div>
@@ -121,20 +143,14 @@
                 <div class="dukdik-always mb-2" onclick="showQR('qr-bank-area')">
                     <img src="https://i.postimg.cc/4x6nN4Sg/roboneo-964433965718330.png" alt="Bank App" class="w-24 h-24 clean-icon">
                 </div>
-                
                 <p class="text-[#00a1e0] font-bold text-lg text-3d-blue">ธนาคารกรุงไทย</p>
                 <div class="text-2xl font-bold text-slate-700 text-3d-blue">7810-219-200</div>
                 <p class="text-pink-400 font-bold text-lg mb-1">น.ส. นัฐมล เที่ยงโยธา</p>
-                
                 <div id="qr-bank-area" class="qr-area w-full border-t-2 border-dashed border-blue-100">
-                    <img src="https://i.postimg.cc/j5jp9v7Q/IMG-20260413-234408.jpg" 
-                         onclick="toggleZoom(this.src)"
-                         class="w-40 h-40 mx-auto mt-4 rounded-xl shadow-md border-2 border-blue-50 cursor-pointer">
+                    <img src="https://i.postimg.cc/j5jp9v7Q/IMG-20260413-234408.jpg" onclick="toggleZoom(this.src)" class="w-40 h-40 mx-auto mt-4 rounded-xl shadow-md border-2 border-blue-50 cursor-pointer">
                 </div>
-                
                 <div class="absolute -left-10 -top-10 w-24 h-24 bg-blue-50 rounded-full opacity-50"></div>
             </div>
-            <button onclick="copyText('7810219200', 'เจ้าหมีบันทึกเลขบัญชีให้แล้ว! 🧸🏦')" class="w-full py-4 bg-[#00a1e0] text-white rounded-2xl font-bold shadow-lg text-lg btn-touch">คัดลอกเลขบัญชี</button>
         </div>
 
         <div id="wallet" class="tab-content space-y-4">
@@ -142,20 +158,14 @@
                 <div class="dukdik-always mb-2" onclick="showQR('qr-wallet-area')">
                     <img src="https://i.postimg.cc/sD3N0TCc/roboneo-964079165604232.png" alt="Wallet App" class="w-24 h-24 clean-icon">
                 </div>
-                
                 <p class="text-[#ff8500] font-bold text-lg text-3d-orange">TrueMoney Wallet</p>
                 <div class="text-2xl font-bold text-slate-700 text-3d-orange">090-294-4904</div>
                 <p class="text-pink-400 font-bold text-lg mb-1">น.ส. นัฐมล เที่ยงโยธา</p>
-
                 <div id="qr-wallet-area" class="qr-area w-full border-t-2 border-dashed border-orange-100">
-                    <img src="https://i.postimg.cc/qMxn7GF5/IMG-20260414-003442.png" 
-                         onclick="toggleZoom(this.src)"
-                         class="w-40 h-40 mx-auto mt-4 rounded-xl shadow-md border-2 border-orange-50 cursor-pointer">
+                    <img src="https://i.postimg.cc/qMxn7GF5/IMG-20260414-003442.png" onclick="toggleZoom(this.src)" class="w-40 h-40 mx-auto mt-4 rounded-xl shadow-md border-2 border-orange-50 cursor-pointer">
                 </div>
-
                 <div class="absolute -right-10 -top-10 w-24 h-24 bg-orange-50 rounded-full opacity-50"></div>
             </div>
-            <button onclick="copyText('0902944904', 'เจ้าหมีบันทึกเบอร์วอเลทให้แล้ว! 🧸🧡')" class="w-full py-4 bg-[#ff8500] text-white rounded-2xl font-bold shadow-lg text-lg btn-touch">คัดลอกเบอร์วอเลท</button>
         </div>
 
         <div class="mt-8 pt-4 border-t border-[#ffdeeb]">
@@ -164,11 +174,47 @@
     </div>
 
     <script>
+        let clickCount = 0;
+        let clickTimer;
+
+        function handleProfileClick() {
+            clickCount++;
+            const frame = document.getElementById('profile-frame');
+            
+            if (clickCount === 1) {
+                // กดครั้งแรก: แสดงแถบ "เปลี่ยนรูป"
+                frame.classList.add('ready-to-change');
+                
+                // ถ้าไม่กดซ้ำภายใน 2.5 วินาที ให้รีเซ็ตกลับไปเป็นปกติ
+                clearTimeout(clickTimer);
+                clickTimer = setTimeout(() => {
+                    frame.classList.remove('ready-to-change');
+                    clickCount = 0;
+                }, 2500);
+            } else if (clickCount === 2) {
+                // กดครั้งที่สอง: เปิดหน้าต่างเลือกไฟล์
+                document.getElementById('profile-upload').click();
+                frame.classList.remove('ready-to-change');
+                clickCount = 0;
+                clearTimeout(clickTimer);
+            }
+        }
+
+        function updateProfileImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // แทนที่รูปเดิมทันที
+                    document.getElementById('profile-img').src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
         function changeTab(id) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             document.querySelectorAll('.qr-area').forEach(el => el.classList.remove('show'));
-
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('bg-[#ff85a2]', 'text-white', 'shadow-sm');
                 btn.classList.add('text-pink-400');
@@ -189,20 +235,6 @@
             } else {
                 overlay.style.display = 'none';
             }
-        }
-
-        function copyText(text, successMessage) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert(successMessage);
-            }).catch(() => {
-                const input = document.createElement('input');
-                input.value = text;
-                document.body.appendChild(input);
-                input.select();
-                document.execCommand('copy');
-                document.body.removeChild(input);
-                alert(successMessage);
-            });
         }
     </script>
 </body>
