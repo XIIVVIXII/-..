@@ -3,6 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Time Town">
+    <meta name="theme-color" content="#fff5f8">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/jdYx10Md/1a6a5c19f05ea142b51400d401e50794.jpg">
+    <link rel="icon" href="https://i.postimg.cc/jdYx10Md/1a6a5c19f05ea142b51400d401e50794.jpg">
+
     <title>Time Town | Payment Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Itim&display=swap" rel="stylesheet">
@@ -48,11 +57,6 @@
         .text-3d-blue { text-shadow: 2px 2px 0px #bde0fe, 3px 3px 0px rgba(189, 224, 254, 0.3); }
         .text-3d-orange { text-shadow: 2px 2px 0px #ffe5d9, 3px 3px 0px rgba(255, 229, 217, 0.3); }
 
-        .clean-icon {
-            object-fit: contain;
-            image-rendering: -webkit-optimize-contrast; 
-        }
-
         .qr-overlay {
             display: none;
             position: fixed;
@@ -71,12 +75,7 @@
             border: 5px solid white;
             animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        @keyframes zoomIn {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
 
-        .btn-touch:active { transform: scale(0.95); }
         .qr-area { overflow: hidden; transition: all 0.4s ease-in-out; max-height: 0; opacity: 0; }
         .qr-area.show { max-height: 300px; opacity: 1; margin-top: 1rem; }
 
@@ -92,12 +91,11 @@
             position: relative;
         }
 
-        /* ส่วนแสดงคำใบ้เมื่อกดครั้งแรก */
         .profile-window-frame::after {
             content: "เปลี่ยนรูป";
             position: absolute;
             inset: 0;
-            background: rgba(255, 133, 162, 0.7);
+            background: rgba(255, 133, 162, 0.85);
             color: white;
             display: flex;
             align-items: center;
@@ -106,13 +104,14 @@
             opacity: 0;
             transition: opacity 0.3s;
             pointer-events: none;
+            font-weight: bold;
         }
         .profile-window-frame.ready-to-change::after {
             opacity: 1;
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-4" onclick="resetProfileFrame()">
 
     <div id="qr-overlay" class="qr-overlay" onclick="toggleZoom()">
         <img id="zoomed-qr" src="" class="qr-zoom-img">
@@ -124,7 +123,7 @@
         
         <div class="flex items-center justify-between mb-6 px-1">
             <div class="relative profile-sway">
-                <div id="profile-frame" class="profile-window-frame" onclick="handleProfileClick()">
+                <div id="profile-frame" class="profile-window-frame" onclick="handleProfileClick(event)">
                     <img id="profile-img" src="https://i.postimg.cc/jdYx10Md/1a6a5c19f05ea142b51400d401e50794.jpg" alt="Profile" class="w-full h-full object-cover">
                 </div>
             </div>
@@ -134,107 +133,102 @@
         </div>
 
         <div class="flex bg-[#fff0f5] p-1.5 rounded-2xl mb-6 border border-[#ffdeeb]">
-            <button onclick="changeTab('bank')" id="btn-bank" class="tab-btn flex-1 py-3 text-base font-bold rounded-xl transition-all bg-[#ff85a2] text-white shadow-sm btn-touch">ธนาคาร</button>
-            <button onclick="changeTab('wallet')" id="btn-wallet" class="tab-btn flex-1 py-3 text-base font-bold rounded-xl transition-all text-pink-400 btn-touch">วอเลท</button>
+            <button onclick="changeTab('bank', event)" id="btn-bank" class="tab-btn flex-1 py-3 text-base font-bold rounded-xl transition-all bg-[#ff85a2] text-white shadow-sm">ธนาคาร</button>
+            <button onclick="changeTab('wallet', event)" id="btn-wallet" class="tab-btn flex-1 py-3 text-base font-bold rounded-xl transition-all text-pink-400">วอเลท</button>
         </div>
 
         <div id="bank" class="tab-content active space-y-4">
             <div class="bg-white p-6 rounded-[2.5rem] border-2 border-[#ffdeeb] shadow-inner relative overflow-hidden flex flex-col items-center">
-                <div class="dukdik-always mb-2" onclick="showQR('qr-bank-area')">
-                    <img src="https://i.postimg.cc/4x6nN4Sg/roboneo-964433965718330.png" alt="Bank App" class="w-24 h-24 clean-icon">
+                <div class="dukdik-always mb-2" onclick="showQR('qr-bank-area', event)">
+                    <img src="https://i.postimg.cc/4x6nN4Sg/roboneo-964433965718330.png" class="w-24 h-24">
                 </div>
                 <p class="text-[#00a1e0] font-bold text-lg text-3d-blue">ธนาคารกรุงไทย</p>
                 <div class="text-2xl font-bold text-slate-700 text-3d-blue">7810-219-200</div>
                 <p class="text-pink-400 font-bold text-lg mb-1">น.ส. นัฐมล เที่ยงโยธา</p>
                 <div id="qr-bank-area" class="qr-area w-full border-t-2 border-dashed border-blue-100">
-                    <img src="https://i.postimg.cc/j5jp9v7Q/IMG-20260413-234408.jpg" onclick="toggleZoom(this.src)" class="w-40 h-40 mx-auto mt-4 rounded-xl shadow-md border-2 border-blue-50 cursor-pointer">
+                    <img src="https://i.postimg.cc/j5jp9v7Q/IMG-20260413-234408.jpg" onclick="toggleZoom(this.src, event)" class="w-40 h-40 mx-auto mt-4 rounded-xl shadow-md cursor-pointer">
                 </div>
-                <div class="absolute -left-10 -top-10 w-24 h-24 bg-blue-50 rounded-full opacity-50"></div>
             </div>
         </div>
 
         <div id="wallet" class="tab-content space-y-4">
             <div class="bg-white p-6 rounded-[2.5rem] border-2 border-[#ffdeeb] shadow-inner relative overflow-hidden flex flex-col items-center">
-                <div class="dukdik-always mb-2" onclick="showQR('qr-wallet-area')">
-                    <img src="https://i.postimg.cc/sD3N0TCc/roboneo-964079165604232.png" alt="Wallet App" class="w-24 h-24 clean-icon">
+                <div class="dukdik-always mb-2" onclick="showQR('qr-wallet-area', event)">
+                    <img src="https://i.postimg.cc/sD3N0TCc/roboneo-964079165604232.png" class="w-24 h-24">
                 </div>
                 <p class="text-[#ff8500] font-bold text-lg text-3d-orange">TrueMoney Wallet</p>
                 <div class="text-2xl font-bold text-slate-700 text-3d-orange">090-294-4904</div>
                 <p class="text-pink-400 font-bold text-lg mb-1">น.ส. นัฐมล เที่ยงโยธา</p>
                 <div id="qr-wallet-area" class="qr-area w-full border-t-2 border-dashed border-orange-100">
-                    <img src="https://i.postimg.cc/qMxn7GF5/IMG-20260414-003442.png" onclick="toggleZoom(this.src)" class="w-40 h-40 mx-auto mt-4 rounded-xl shadow-md border-2 border-orange-50 cursor-pointer">
+                    <img src="https://i.postimg.cc/qMxn7GF5/IMG-20260414-003442.png" onclick="toggleZoom(this.src, event)" class="w-40 h-40 mx-auto mt-4 rounded-xl shadow-md cursor-pointer">
                 </div>
-                <div class="absolute -right-10 -top-10 w-24 h-24 bg-orange-50 rounded-full opacity-50"></div>
             </div>
         </div>
 
-        <div class="mt-8 pt-4 border-t border-[#ffdeeb]">
-            <p class="text-xl text-pink-300 font-bold bounce-up-down">ขอขอบคุณงับ ✨🧸</p>
-        </div>
+        <p class="mt-8 text-xl text-pink-300 font-bold">ขอขอบคุณงับ ✨🧸</p>
     </div>
 
     <script>
         let clickCount = 0;
-        let clickTimer;
 
-        function handleProfileClick() {
+        function handleProfileClick(event) {
+            event.stopPropagation();
             clickCount++;
             const frame = document.getElementById('profile-frame');
             
             if (clickCount === 1) {
-                // กดครั้งแรก: แสดงแถบ "เปลี่ยนรูป"
                 frame.classList.add('ready-to-change');
-                
-                // ถ้าไม่กดซ้ำภายใน 2.5 วินาที ให้รีเซ็ตกลับไปเป็นปกติ
-                clearTimeout(clickTimer);
-                clickTimer = setTimeout(() => {
-                    frame.classList.remove('ready-to-change');
-                    clickCount = 0;
-                }, 2500);
             } else if (clickCount === 2) {
-                // กดครั้งที่สอง: เปิดหน้าต่างเลือกไฟล์
                 document.getElementById('profile-upload').click();
+                resetProfileFrame();
+            }
+        }
+
+        function resetProfileFrame() {
+            const frame = document.getElementById('profile-frame');
+            if (frame.classList.contains('ready-to-change')) {
                 frame.classList.remove('ready-to-change');
                 clickCount = 0;
-                clearTimeout(clickTimer);
             }
         }
 
         function updateProfileImage(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    // แทนที่รูปเดิมทันที
-                    document.getElementById('profile-img').src = e.target.result;
-                }
+                reader.onload = e => document.getElementById('profile-img').src = e.target.result;
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
-        function changeTab(id) {
+        function changeTab(id, event) {
+            if(event) event.stopPropagation();
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
             document.querySelectorAll('.qr-area').forEach(el => el.classList.remove('show'));
+            document.getElementById(id).classList.add('active');
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('bg-[#ff85a2]', 'text-white', 'shadow-sm');
                 btn.classList.add('text-pink-400');
             });
             document.getElementById('btn-' + id).classList.add('bg-[#ff85a2]', 'text-white', 'shadow-sm');
+            resetProfileFrame();
         }
 
-        function showQR(areaId) {
-            document.getElementById(areaId).classList.toggle('show');
+        function showQR(areaId, event) { 
+            if(event) event.stopPropagation();
+            document.getElementById(areaId).classList.toggle('show'); 
+            resetProfileFrame();
         }
 
-        function toggleZoom(src = null) {
+        function toggleZoom(src = null, event) {
+            if(event) event.stopPropagation();
             const overlay = document.getElementById('qr-overlay');
-            const zoomedImg = document.getElementById('zoomed-qr');
             if (src) {
-                zoomedImg.src = src;
+                document.getElementById('zoomed-qr').src = src;
                 overlay.style.display = 'flex';
             } else {
                 overlay.style.display = 'none';
             }
+            resetProfileFrame();
         }
     </script>
 </body>
